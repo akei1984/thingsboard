@@ -296,8 +296,7 @@ public class RuleChainActorMessageProcessor extends ComponentMsgProcessor<RuleCh
     private void onTellNext(TbMsg msg, RuleNodeId originatorNodeId, Set<String> relationTypes, String failureMessage) {
         try {
             checkComponentStateActive(msg);
-            EntityId entityId = msg.getOriginator();
-            TopicPartitionInfo tpi = systemContext.resolve(tenantId, entityId, msg);
+            TopicPartitionInfo tpi = systemContext.resolveForRuleEngine(tenantId, msg);
 
             List<RuleNodeRelation> ruleNodeRelations = nodeRoutes.get(originatorNodeId);
             if (ruleNodeRelations == null) { // When unchecked, this will cause NullPointerException when rule node doesn't exist anymore

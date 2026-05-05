@@ -24,6 +24,7 @@ import org.thingsboard.server.actors.TbActorCtx;
 import org.thingsboard.server.actors.TbRuleNodeUpdateException;
 import org.thingsboard.server.actors.shared.ComponentMsgProcessor;
 import org.thingsboard.server.common.data.ApiUsageRecordKey;
+import org.thingsboard.server.common.data.id.EntityId;
 import org.thingsboard.server.common.data.id.RuleNodeId;
 import org.thingsboard.server.common.data.id.TenantId;
 import org.thingsboard.server.common.data.plugin.ComponentLifecycleState;
@@ -196,17 +197,27 @@ public class RuleNodeActorMessageProcessor extends ComponentMsgProcessor<RuleNod
     private boolean isMyNodePartition(RuleNode ruleNode) {
         boolean result = ruleNode == null || !ruleNode.isSingletonMode()
                 || systemContext.getDiscoveryService().isMonolith()
-                || defaultCtx.isLocalEntity(ruleNode.getId());
+                || defaultCtx.isLocalEntity(resolveSingletonPartitionKey(ruleNode));
         if (!result) {
             log.trace("[{}][{}] Is not my node partition", tenantId, entityId);
         }
         return result;
     }
 
+    private EntityId resolveSingletonPartitionKey(RuleNode ruleNode) {
+        if (systemContext.isStickyPartitionByRuleChain() && ruleNode.getRuleChainId() != null) {
+            return ruleNode.getRuleChainId();
+        }
+        return ruleNode.getId();
+    }
+
     //Message will return after processing. See RuleChainActorMessageProcessor.pushToTarget.
     private void putToNodePartition(TbMsg source) {
         TbMsg tbMsg = TbMsg.newMsg(source, source.getQueueName(), source.getRuleChainId(), entityId);
-        TopicPartitionInfo tpi = systemContext.resolve(ServiceType.TB_RULE_ENGINE, tbMsg.getQueueName(), tenantId, ruleNode.getId());
+        EntityId partitionKey = systemContext.isStickyPartitionByRuleChain() && tbMsg.getRuleChainId() != null
+                ? tbMsg.getRuleChainId()
+                : ruleNode.getId();
+        TopicPartitionInfo tpi = systemContext.resolve(ServiceType.TB_RULE_ENGINE, tbMsg.getQueueName(), tenantId, partitionKey);
         TransportProtos.ToRuleEngineMsg toQueueMsg = TransportProtos.ToRuleEngineMsg.newBuilder()
                 .setTenantIdMSB(tenantId.getId().getMostSignificantBits())
                 .setTenantIdLSB(tenantId.getId().getLeastSignificantBits())

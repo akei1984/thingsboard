@@ -23,6 +23,7 @@ import com.google.common.util.concurrent.ListeningExecutorService;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jws;
 import lombok.extern.slf4j.Slf4j;
+import java.util.Locale;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.awaitility.Awaitility;
 import org.hamcrest.Matcher;
@@ -349,6 +350,8 @@ public abstract class AbstractWebTest extends AbstractInMemoryStorageTest {
     @Before
     public void setupWebTest() throws Exception {
         log.debug("Executing web test setup");
+
+        Locale.setDefault(Locale.ENGLISH);
 
         setupMailServiceMock();
 

@@ -203,7 +203,7 @@ public class DefaultTbContext implements TbContext {
                 .resetRuleNodeId()
                 .build();
         tbMsg.pushToStack(selfRuleChainId, selfId);
-        TopicPartitionInfo tpi = resolvePartition(msg);
+        TopicPartitionInfo tpi = resolvePartition(tbMsg);
         doEnqueue(tpi, tbMsg, new SimpleTbQueueCallback(md -> ack(msg), t -> tellFailure(msg, t)));
     }
 
@@ -311,7 +311,10 @@ public class DefaultTbContext implements TbContext {
     }
 
     private TopicPartitionInfo resolvePartition(TbMsg tbMsg, String queueName) {
-        return mainCtx.resolve(ServiceType.TB_RULE_ENGINE, queueName, getTenantId(), tbMsg.getOriginator());
+        EntityId partitionKey = mainCtx.isStickyPartitionByRuleChain() && tbMsg.getRuleChainId() != null
+                ? tbMsg.getRuleChainId()
+                : tbMsg.getOriginator();
+        return mainCtx.resolve(ServiceType.TB_RULE_ENGINE, queueName, getTenantId(), partitionKey);
     }
 
     private TopicPartitionInfo resolvePartition(TbMsg tbMsg) {

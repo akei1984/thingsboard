@@ -692,6 +692,7 @@ class DefaultTbContextTest {
                 .ignoringFields("id", "ctx")
                 .isEqualTo(expectedTbMsg);
         then(mainCtxMock).should().getClusterService();
+        then(mainCtxMock).should().isStickyPartitionByRuleChain();
         then(mainCtxMock).shouldHaveNoMoreInteractions();
         then(tbClusterServiceMock).shouldHaveNoMoreInteractions();
     }
@@ -718,6 +719,7 @@ class DefaultTbContextTest {
         TbMsg expectedTbMsg = TbMsg.newMsg(msg, msg.getQueueName(), RULE_CHAIN_ID, RULE_NODE_ID);
         checkEnqueueForTellFailurePushMsgToRuleEngine(tbClusterServiceMock, tpi, expectedTbMsg);
         then(mainCtxMock).should().getClusterService();
+        then(mainCtxMock).should().isStickyPartitionByRuleChain();
         then(mainCtxMock).shouldHaveNoMoreInteractions();
         then(tbClusterServiceMock).shouldHaveNoMoreInteractions();
     }
@@ -751,6 +753,7 @@ class DefaultTbContextTest {
                 .ignoringFields("id", "ctx")
                 .isEqualTo(expectedTbMsg);
         then(mainCtxMock).should().getClusterService();
+        then(mainCtxMock).should().isStickyPartitionByRuleChain();
         then(mainCtxMock).shouldHaveNoMoreInteractions();
         then(tbClusterServiceMock).shouldHaveNoMoreInteractions();
     }
@@ -777,6 +780,7 @@ class DefaultTbContextTest {
         then(msgMock).shouldHaveNoMoreInteractions();
 
         then(mainCtxMock).should().resolve(ServiceType.TB_RULE_ENGINE, DataConstants.MAIN_QUEUE_NAME, TENANT_ID, TENANT_ID);
+        then(mainCtxMock).should().isStickyPartitionByRuleChain();
         then(mainCtxMock).shouldHaveNoMoreInteractions();
 
         then(nodeCtxMock).should(times(2)).getTenantId();
@@ -833,6 +837,7 @@ class DefaultTbContextTest {
                     .isEqualTo(expectedTbMsg);
         }
         then(mainCtxMock).should().getClusterService();
+        then(mainCtxMock).should().isStickyPartitionByRuleChain();
         then(mainCtxMock).shouldHaveNoMoreInteractions();
         then(tbClusterServiceMock).shouldHaveNoMoreInteractions();
     }
@@ -885,6 +890,7 @@ class DefaultTbContextTest {
             then(mainCtxMock).should().persistDebugOutput(eq(TENANT_ID), eq(RULE_NODE_ID), eq(msg), eq(TbNodeConnectionType.TO_ROOT_RULE_CHAIN), nullable(Throwable.class), nullable(String.class));
         }
         then(mainCtxMock).should().getClusterService();
+        then(mainCtxMock).should().isStickyPartitionByRuleChain();
         then(mainCtxMock).shouldHaveNoMoreInteractions();
         then(tbClusterServiceMock).shouldHaveNoMoreInteractions();
     }
@@ -1123,6 +1129,138 @@ class DefaultTbContextTest {
                 .copyMetaData(TbMsgMetaData.EMPTY)
                 .data(TbMsg.EMPTY_STRING)
                 .build();
+    }
+
+    // ---- Sticky Partition Tests ----
+
+    @Test
+    void givenStickyEnabled_whenEnqueueForTellNext_thenPartitionKeyIsRuleChainId() {
+        // GIVEN
+        var ruleChainId = new RuleChainId(UUID.fromString("aabbccdd-0000-0000-0000-000000000001"));
+        var tpi = resolve(DataConstants.MAIN_QUEUE_NAME);
+        var ruleNode = new RuleNode(RULE_NODE_ID);
+        ruleNode.setRuleChainId(RULE_CHAIN_ID);
+        ruleNode.setDebugSettings(DebugSettings.off());
+        var clusterService = mock(TbClusterService.class);
+        var msg = TbMsg.newMsg()
+                .queueName(DataConstants.MAIN_QUEUE_NAME)
+                .type(TbMsgType.POST_TELEMETRY_REQUEST)
+                .originator(TENANT_ID)
+                .ruleChainId(ruleChainId)
+                .copyMetaData(TbMsgMetaData.EMPTY)
+                .data(TbMsg.EMPTY_STRING)
+                .build();
+
+        given(nodeCtxMock.getTenantId()).willReturn(TENANT_ID);
+        given(nodeCtxMock.getSelf()).willReturn(ruleNode);
+        given(mainCtxMock.isStickyPartitionByRuleChain()).willReturn(true);
+        given(mainCtxMock.resolve(eq(ServiceType.TB_RULE_ENGINE), eq(DataConstants.MAIN_QUEUE_NAME), eq(TENANT_ID), eq(ruleChainId))).willReturn(tpi);
+        given(mainCtxMock.getClusterService()).willReturn(clusterService);
+
+        // WHEN
+        defaultTbContext.enqueueForTellNext(msg, TbNodeConnectionType.SUCCESS);
+
+        // THEN - partition resolved by ruleChainId (sticky key), not originator
+        then(mainCtxMock).should().resolve(ServiceType.TB_RULE_ENGINE, DataConstants.MAIN_QUEUE_NAME, TENANT_ID, ruleChainId);
+        then(clusterService).should().pushMsgToRuleEngine(eq(tpi), any(), any(), any());
+    }
+
+    @Test
+    void givenStickyDisabled_whenEnqueueForTellNext_thenPartitionKeyIsOriginator() {
+        // GIVEN
+        var ruleChainId = new RuleChainId(UUID.fromString("aabbccdd-0000-0000-0000-000000000002"));
+        var tpi = resolve(DataConstants.MAIN_QUEUE_NAME);
+        var ruleNode = new RuleNode(RULE_NODE_ID);
+        ruleNode.setRuleChainId(RULE_CHAIN_ID);
+        ruleNode.setDebugSettings(DebugSettings.off());
+        var clusterService = mock(TbClusterService.class);
+        var msg = TbMsg.newMsg()
+                .queueName(DataConstants.MAIN_QUEUE_NAME)
+                .type(TbMsgType.POST_TELEMETRY_REQUEST)
+                .originator(TENANT_ID)
+                .ruleChainId(ruleChainId)
+                .copyMetaData(TbMsgMetaData.EMPTY)
+                .data(TbMsg.EMPTY_STRING)
+                .build();
+
+        given(nodeCtxMock.getTenantId()).willReturn(TENANT_ID);
+        given(nodeCtxMock.getSelf()).willReturn(ruleNode);
+        given(mainCtxMock.isStickyPartitionByRuleChain()).willReturn(false);
+        given(mainCtxMock.resolve(eq(ServiceType.TB_RULE_ENGINE), eq(DataConstants.MAIN_QUEUE_NAME), eq(TENANT_ID), eq(TENANT_ID))).willReturn(tpi);
+        given(mainCtxMock.getClusterService()).willReturn(clusterService);
+
+        // WHEN
+        defaultTbContext.enqueueForTellNext(msg, TbNodeConnectionType.SUCCESS);
+
+        // THEN - partition resolved by originator (non-sticky), not ruleChainId
+        then(mainCtxMock).should().resolve(ServiceType.TB_RULE_ENGINE, DataConstants.MAIN_QUEUE_NAME, TENANT_ID, TENANT_ID);
+        then(clusterService).should().pushMsgToRuleEngine(eq(tpi), any(), any(), any());
+    }
+
+    @Test
+    void givenStickyEnabledButNoRuleChainId_whenEnqueueForTellNext_thenFallsBackToOriginator() {
+        // GIVEN - msg has no ruleChainId
+        var tpi = resolve(DataConstants.MAIN_QUEUE_NAME);
+        var ruleNode = new RuleNode(RULE_NODE_ID);
+        ruleNode.setRuleChainId(RULE_CHAIN_ID);
+        ruleNode.setDebugSettings(DebugSettings.off());
+        var clusterService = mock(TbClusterService.class);
+        var msg = TbMsg.newMsg()
+                .queueName(DataConstants.MAIN_QUEUE_NAME)
+                .type(TbMsgType.POST_TELEMETRY_REQUEST)
+                .originator(TENANT_ID)
+                // no ruleChainId set → null
+                .copyMetaData(TbMsgMetaData.EMPTY)
+                .data(TbMsg.EMPTY_STRING)
+                .build();
+
+        given(nodeCtxMock.getTenantId()).willReturn(TENANT_ID);
+        given(nodeCtxMock.getSelf()).willReturn(ruleNode);
+        given(mainCtxMock.isStickyPartitionByRuleChain()).willReturn(true);
+        given(mainCtxMock.resolve(eq(ServiceType.TB_RULE_ENGINE), eq(DataConstants.MAIN_QUEUE_NAME), eq(TENANT_ID), eq(TENANT_ID))).willReturn(tpi);
+        given(mainCtxMock.getClusterService()).willReturn(clusterService);
+
+        // WHEN
+        defaultTbContext.enqueueForTellNext(msg, TbNodeConnectionType.SUCCESS);
+
+        // THEN - falls back to originator when ruleChainId is null
+        then(mainCtxMock).should().resolve(ServiceType.TB_RULE_ENGINE, DataConstants.MAIN_QUEUE_NAME, TENANT_ID, TENANT_ID);
+        then(clusterService).should().pushMsgToRuleEngine(eq(tpi), any(), any(), any());
+    }
+
+    @Test
+    void givenStickyEnabled_whenInput_thenPartitionKeyIsTargetRuleChainId() {
+        // GIVEN
+        var targetRuleChainId = new RuleChainId(UUID.fromString("aabbccdd-0000-0000-0000-000000000003"));
+        var tpi = resolve(DataConstants.MAIN_QUEUE_NAME);
+        var ruleNode = new RuleNode(RULE_NODE_ID);
+        ruleNode.setRuleChainId(RULE_CHAIN_ID);
+        ruleNode.setDebugSettings(DebugSettings.off());
+        var clusterService = mock(TbClusterService.class);
+        var callbackMock = mock(TbMsgCallback.class);
+        given(callbackMock.isMsgValid()).willReturn(true);
+        var msg = TbMsg.newMsg()
+                .type(TbMsgType.POST_TELEMETRY_REQUEST)
+                .originator(TENANT_ID)
+                .queueName(DataConstants.MAIN_QUEUE_NAME)
+                .copyMetaData(TbMsgMetaData.EMPTY)
+                .data(TbMsg.EMPTY_STRING)
+                .callback(callbackMock)
+                .build();
+
+        given(nodeCtxMock.getTenantId()).willReturn(TENANT_ID);
+        given(nodeCtxMock.getSelf()).willReturn(ruleNode);
+        given(mainCtxMock.isStickyPartitionByRuleChain()).willReturn(true);
+        // input() creates a copy of msg with ruleChainId=targetRuleChainId, then resolves partition from that copy
+        given(mainCtxMock.resolve(eq(ServiceType.TB_RULE_ENGINE), eq(DataConstants.MAIN_QUEUE_NAME), eq(TENANT_ID), eq(targetRuleChainId))).willReturn(tpi);
+        given(mainCtxMock.getClusterService()).willReturn(clusterService);
+
+        // WHEN
+        defaultTbContext.input(msg, targetRuleChainId);
+
+        // THEN - partition resolved using the target rule chain id (sticky routing)
+        then(mainCtxMock).should().resolve(ServiceType.TB_RULE_ENGINE, DataConstants.MAIN_QUEUE_NAME, TENANT_ID, targetRuleChainId);
+        then(clusterService).should().pushMsgToRuleEngine(eq(tpi), any(), any(), any());
     }
 
     private static long getUntilTime() {

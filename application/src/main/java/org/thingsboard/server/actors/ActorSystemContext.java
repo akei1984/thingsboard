@@ -680,6 +680,10 @@ public class ActorSystemContext {
     @Getter
     private boolean externalNodeForceAck;
 
+    @Value("${actors.rule.sticky_partition_by_rule_chain:false}")
+    @Getter
+    private boolean stickyPartitionByRuleChain;
+
     @Value("${state.rule.node.deviceState.rateLimit:1:1,30:60,60:3600}")
     @Getter
     private String deviceStateNodeRateLimitConfig;
@@ -768,6 +772,13 @@ public class ActorSystemContext {
 
     public TopicPartitionInfo resolve(TenantId tenantId, EntityId entityId, TbMsg msg) {
         return partitionService.resolve(ServiceType.TB_RULE_ENGINE, msg.getQueueName(), tenantId, entityId, msg.getPartition());
+    }
+
+    public TopicPartitionInfo resolveForRuleEngine(TenantId tenantId, TbMsg msg) {
+        EntityId partitionKey = stickyPartitionByRuleChain && msg.getRuleChainId() != null
+                ? msg.getRuleChainId()
+                : msg.getOriginator();
+        return partitionService.resolve(ServiceType.TB_RULE_ENGINE, msg.getQueueName(), tenantId, partitionKey, msg.getPartition());
     }
 
     public String getServiceId() {

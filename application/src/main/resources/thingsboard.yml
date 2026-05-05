@@ -584,6 +584,11 @@ actors:
       queue_size: "${ACTORS_RULE_TRANSACTION_QUEUE_SIZE:15000}"
       # Time in milliseconds for transaction to complete
       duration: "${ACTORS_RULE_TRANSACTION_DURATION:60000}"
+    # When enabled, all messages processed by the same rule chain are routed to the same Kafka partition.
+    # This eliminates cross-node Kafka round-trips for singleton rule nodes in cluster mode,
+    # at the cost of reduced load distribution within a single rule chain.
+    # Hot partitions are possible for high-frequency rule chains; use separate queues per device profile to mitigate.
+    sticky_partition_by_rule_chain: "${TB_QUEUE_RE_STICKY_PARTITION_BY_RULE_CHAIN:false}"
     external:
       # Force acknowledgment of the incoming message for external rule nodes to decrease processing latency.
       # Enqueue the result of external node processing as a separate message to the rule engine.
