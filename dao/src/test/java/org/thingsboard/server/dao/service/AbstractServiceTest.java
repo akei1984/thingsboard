@@ -28,8 +28,6 @@ import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.context.support.AnnotationConfigContextLoader;
-import org.testcontainers.containers.GenericContainer;
-import org.testcontainers.utility.DockerImageName;
 import org.thingsboard.common.util.JacksonUtil;
 import org.thingsboard.server.common.data.DeviceProfile;
 import org.thingsboard.server.common.data.DeviceProfileType;
@@ -88,22 +86,6 @@ import static org.junit.Assert.assertNotNull;
 public abstract class AbstractServiceTest {
 
     public static final TenantId SYSTEM_TENANT_ID = TenantId.SYS_TENANT_ID;
-
-    private static GenericContainer<?> redisContainer;
-
-    static {
-        try {
-            redisContainer = new GenericContainer<>(DockerImageName.parse("redis:7-alpine"))
-                    .withExposedPorts(6379)
-                    .withLabel("testcontainers", "true");
-            redisContainer.start();
-            System.setProperty("spring.redis.host", "localhost");
-            System.setProperty("spring.redis.port", String.valueOf(redisContainer.getMappedPort(6379)));
-        } catch (Exception e) {
-            System.err.println("Warning: Failed to start Redis container: " + e.getMessage());
-            System.err.println("Tests will continue but may fail if Redis is required");
-        }
-    }
 
     @Autowired
     protected TenantService tenantService;

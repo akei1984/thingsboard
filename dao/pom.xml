@@ -275,10 +275,10 @@
                 <configuration>
                     <excludes>
                         <exclude>**/nosql/*Test.java</exclude>
+                        <exclude>**/*TestSuite.java</exclude>
                     </excludes>
                     <includes>
                         <include>**/*Test.java</include>
-                        <include>**/*TestSuite.java</include>
                     </includes>
                 </configuration>
             </plugin>
