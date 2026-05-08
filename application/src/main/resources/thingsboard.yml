@@ -288,6 +288,20 @@ ui:
     # Base URL for UI help assets
     base-url: "${UI_HELP_BASE_URL:https://raw.githubusercontent.com/thingsboard/thingsboard-ui-help/release-4.4}"
 
+# White labeling configuration. The feature is on by default and stores small inline assets / advanced CSS in the database.
+# Tune the limits below to control how much data administrators can attach to a white-labeling profile.
+white_labeling:
+  enabled: "${TB_WHITE_LABELING_ENABLED:true}"
+  assets:
+    max_logo_data_uri_size: "${TB_WHITE_LABELING_MAX_LOGO_SIZE:262144}" # Maximum allowed length of a logo data URI in bytes
+    max_favicon_data_uri_size: "${TB_WHITE_LABELING_MAX_FAVICON_SIZE:65536}" # Maximum allowed length of a favicon data URI in bytes
+  advanced_css:
+    max_length: "${TB_WHITE_LABELING_ADVANCED_CSS_MAX_LENGTH:32768}" # Maximum length of administrator-provided CSS
+  login:
+    # When true, the unauthenticated login branding endpoint resolves the host from the X-Forwarded-Host header.
+    # Only enable when the reverse proxy enforces a canonical, trusted forwarded host header.
+    trust_forwarded_host: "${TB_WHITE_LABELING_TRUST_FORWARDED_HOST:false}"
+
 # Database telemetry parameters
 # Selects the storage backend (SQL, Cassandra, or TimescaleDB) for time-series and latest telemetry data.
 database:
@@ -788,6 +802,9 @@ cache:
     apiKeys:
       timeToLiveInMinutes: "${CACHE_SPECS_API_KEYS_TTL:1440}" # API keys cache TTL
       maxSize: "${CACHE_SPECS_API_KEYS_MAX_SIZE:10000}" # 0 means the cache is disabled
+    whiteLabeling:
+      timeToLiveInMinutes: "${CACHE_SPECS_WHITE_LABELING_TTL:5}" # White labeling cache TTL
+      maxSize: "${CACHE_SPECS_WHITE_LABELING_MAX_SIZE:1000}" # 0 means the cache is disabled
 
   # Deliberately placed outside the 'specs' group above
   notificationRules:

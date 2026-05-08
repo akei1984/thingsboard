@@ -61,6 +61,7 @@ public class CertificateReloadManagerTest {
 
     private void writeFileAndAwaitMtimeChange(Path path, String content, long baselineMtime) throws IOException {
         Files.writeString(path, content);
+        Files.setLastModifiedTime(path, FileTime.fromMillis(baselineMtime + 1000));
         await().atMost(2, SECONDS)
                 .pollInterval(10, MILLISECONDS)
                 .until(() -> Files.getLastModifiedTime(path).toMillis() != baselineMtime);

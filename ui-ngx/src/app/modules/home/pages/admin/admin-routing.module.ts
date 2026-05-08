@@ -48,6 +48,7 @@ import { catchError } from 'rxjs/operators';
 import { JsLibraryTableConfigResolver } from '@home/pages/admin/resource/js-library-table-config.resolver';
 import { TrendzSettingsComponent } from '@home/pages/admin/trendz-settings.component';
 import { aiModelRoutes } from '@home/pages/ai-model/ai-model-routing.module';
+import { WhiteLabelingSettingsComponent } from '@home/pages/admin/white-labeling-settings.component';
 
 export const scadaSymbolResolver: ResolveFn<ScadaSymbolData> =
   (route: ActivatedRouteSnapshot,
@@ -360,6 +361,18 @@ const routes: Routes = [
           title: 'admin.trendz-settings',
           breadcrumb: {
             menuId: MenuId.trendz_settings
+          }
+        }
+      },
+      {
+        path: 'white-labeling',
+        component: WhiteLabelingSettingsComponent,
+        canDeactivate: [ConfirmOnExitGuard],
+        data: {
+          auth: [Authority.SYS_ADMIN],
+          title: 'admin.white-labeling.title',
+          breadcrumb: {
+            menuId: MenuId.white_labeling
           }
         }
       },

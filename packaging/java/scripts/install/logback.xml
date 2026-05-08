@@ -18,13 +18,15 @@
 -->
 <!DOCTYPE configuration>
 <configuration>
+    <!-- Allow runtime override of log folder via system property or environment variable -->
+    <property name="logFolder" value="${install.logFolder:-${pkg.logFolder}}"/>
 
     <appender name="fileLogAppender"
               class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${pkg.logFolder}/install.log</file>
+        <file>${logFolder}/install.log</file>
         <rollingPolicy
                 class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-            <fileNamePattern>${pkg.logFolder}/install.%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+            <fileNamePattern>${logFolder}/install.%d{yyyy-MM-dd}.%i.log</fileNamePattern>
             <maxFileSize>100MB</maxFileSize>
             <maxHistory>30</maxHistory>
             <totalSizeCap>3GB</totalSizeCap>

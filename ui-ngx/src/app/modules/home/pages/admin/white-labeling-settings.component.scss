@@ -1,0 +1,155 @@
+/**
+ * Copyright © 2016-2026 The Thingsboard Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+:host {
+  display: block;
+}
+
+.tb-white-labeling-page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.tb-wl-asset-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.tb-wl-grow {
+  flex: 1 1 280px;
+  min-width: 240px;
+}
+
+.tb-wl-narrow {
+  max-width: 240px;
+}
+
+.tb-wl-upload-button {
+  flex: 0 0 auto;
+}
+
+.tb-wl-preview {
+  max-height: 48px;
+  max-width: 160px;
+  object-fit: contain;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  padding: 4px;
+  border-radius: 4px;
+  background: #fafafa;
+}
+
+.tb-wl-preview.tb-wl-favicon {
+  max-height: 32px;
+  max-width: 32px;
+}
+
+.tb-wl-palette {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0;
+
+  h4 {
+    flex: 1 1 100%;
+    margin: 0 0 4px 0;
+  }
+
+  mat-form-field {
+    flex: 1 1 200px;
+    min-width: 180px;
+  }
+}
+
+.tb-wl-lib-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
+}
+
+.tb-wl-lib-name {
+  flex: 0 0 160px;
+  min-width: 120px;
+}
+
+.tb-wl-lib-url {
+  flex: 1 1 280px;
+  min-width: 180px;
+}
+
+.tb-wl-lib-uploaded {
+  flex: 0 0 auto;
+}
+
+.tb-wl-js-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tb-wl-js-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  span {
+    margin: 0;
+  }
+}
+
+.tb-wl-color-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  flex: 1 1 100%;
+}
+
+.tb-wl-color-input {
+  flex: 1 1 200px;
+  min-width: 180px;
+}
+
+.tb-wl-color-picker {
+  flex: 0 0 auto;
+  position: relative;
+  --picker-color: #1976d2;
+
+  &::before {
+    content: '';
+    position: absolute;
+    left: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 20px;
+    height: 20px;
+    border-radius: 3px;
+    background-color: var(--picker-color);
+    border: 1px solid rgba(0, 0, 0, 0.12);
+    pointer-events: none;
+  }
+
+  mat-icon {
+    margin-left: 24px;
+  }
+
+  input[type="color"] {
+    display: none;
+  }
+}

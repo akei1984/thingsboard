@@ -90,6 +90,8 @@ public class TwoFactorAuthTest extends AbstractControllerTest {
     private AuditLogService auditLogService;
     @Autowired
     private UserService userService;
+    @Autowired
+    private org.thingsboard.server.dao.user.UserAuthSettingsDao userAuthSettingsDao;
 
     private User user;
     private String username;
@@ -114,6 +116,10 @@ public class TwoFactorAuthTest extends AbstractControllerTest {
     public void afterEach() {
         twoFaConfigManager.deletePlatformTwoFaSettings(tenantId);
         twoFaConfigManager.deletePlatformTwoFaSettings(TenantId.SYS_TENANT_ID);
+        User sysAdmin = userService.findUserByEmail(TenantId.SYS_TENANT_ID, SYS_ADMIN_EMAIL);
+        if (sysAdmin != null) {
+            userAuthSettingsDao.removeByUserId(sysAdmin.getId());
+        }
     }
 
     @Test

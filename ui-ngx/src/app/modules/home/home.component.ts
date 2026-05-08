@@ -34,6 +34,7 @@ import { RouterTabsComponent } from '@home/components/router-tabs.component';
 import { FormBuilder } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { isDefined, isDefinedAndNotNull } from '@core/utils';
+import { WhiteLabelingRuntimeService } from '@core/services/white-labeling-runtime.service';
 
 @Component({
     selector: 'tb-home',
@@ -74,7 +75,8 @@ export class HomeComponent extends PageComponent implements AfterViewInit, OnIni
               @Inject(WINDOW) private window: Window,
               private activeComponentService: ActiveComponentService,
               private fb: FormBuilder,
-              public breakpointObserver: BreakpointObserver) {
+              public breakpointObserver: BreakpointObserver,
+              private whiteLabelingRuntime: WhiteLabelingRuntimeService) {
     super(store);
   }
 
@@ -97,6 +99,16 @@ export class HomeComponent extends PageComponent implements AfterViewInit, OnIni
           }
         }
       );
+
+    this.whiteLabelingRuntime.effective()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(branding => {
+        if (branding?.logoUrl) {
+          this.logo = branding.logoUrl;
+        } else {
+          this.logo = 'assets/logo_title_white.svg';
+        }
+      });
   }
 
   ngOnDestroy() {

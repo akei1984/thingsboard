@@ -1,0 +1,310 @@
+<!--
+
+    Copyright © 2016-2026 The Thingsboard Authors
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+<div class="tb-white-labeling-page">
+  <mat-card appearance="outlined" class="settings-card">
+    <mat-card-header>
+      <mat-card-title>
+        <div class="mat-headline-5">{{ 'admin.white-labeling.general-title' | translate }}</div>
+      </mat-card-title>
+      <mat-card-subtitle>
+        <div>{{ 'admin.white-labeling.scope-label' | translate: { scope: scopeLabel } }}</div>
+      </mat-card-subtitle>
+    </mat-card-header>
+    @if (!generalLoaded) {
+      <mat-progress-bar color="warn" mode="indeterminate"></mat-progress-bar>
+    } @else {
+      <div style="height: 4px;"></div>
+    }
+    <mat-card-content>
+      <form [formGroup]="generalForm" (ngSubmit)="saveGeneral()" class="tb-form-panel no-border no-padding">
+        <fieldset [disabled]="!generalLoaded">
+          <mat-form-field appearance="outline" class="mat-block">
+            <mat-label>{{ 'admin.white-labeling.application-title' | translate }}</mat-label>
+            <input matInput formControlName="applicationTitle" maxlength="255" />
+          </mat-form-field>
+
+          <div class="tb-wl-asset-row">
+            <mat-form-field appearance="outline" class="mat-block tb-wl-grow">
+              <mat-label>{{ 'admin.white-labeling.logo-url' | translate }}</mat-label>
+              <input matInput formControlName="logoUrl" />
+              <mat-hint>{{ 'admin.white-labeling.logo-url-hint' | translate }}</mat-hint>
+            </mat-form-field>
+            <button type="button" mat-stroked-button class="tb-wl-upload-button"
+                    (click)="generalLogoFile.click()">{{ 'admin.white-labeling.upload-logo' | translate }}</button>
+            <input #generalLogoFile type="file" accept="image/png,image/jpeg,image/svg+xml,image/webp"
+                   hidden (change)="onLogoSelected($event, 'logoDataUri', 'general')" />
+            @if (resolveLogoPreview(generalForm.value)) {
+              <img class="tb-wl-preview" [src]="resolveLogoPreview(generalForm.value)" alt="logo preview" />
+              <button type="button" mat-icon-button color="warn"
+                      (click)="clearAsset('logoDataUri', 'general'); clearAsset('logoUrl', 'general')"
+                      [matTooltip]="'admin.white-labeling.clear-logo' | translate">
+                <mat-icon>delete_outline</mat-icon>
+              </button>
+            }
+          </div>
+
+          <div class="tb-wl-asset-row">
+            <mat-form-field appearance="outline" class="mat-block tb-wl-grow">
+              <mat-label>{{ 'admin.white-labeling.favicon-url' | translate }}</mat-label>
+              <input matInput formControlName="faviconUrl" />
+            </mat-form-field>
+            <button type="button" mat-stroked-button class="tb-wl-upload-button"
+                    (click)="generalFaviconFile.click()">{{ 'admin.white-labeling.upload-favicon' | translate }}</button>
+            <input #generalFaviconFile type="file"
+                   accept="image/png,image/x-icon,image/vnd.microsoft.icon,image/svg+xml"
+                   hidden (change)="onLogoSelected($event, 'faviconDataUri', 'general')" />
+            @if (resolveFaviconPreview(generalForm.value)) {
+              <img class="tb-wl-preview tb-wl-favicon" [src]="resolveFaviconPreview(generalForm.value)" alt="favicon preview" />
+              <button type="button" mat-icon-button color="warn"
+                      (click)="clearAsset('faviconDataUri', 'general'); clearAsset('faviconUrl', 'general')"
+                      [matTooltip]="'admin.white-labeling.clear-favicon' | translate">
+                <mat-icon>delete_outline</mat-icon>
+              </button>
+            }
+          </div>
+
+          <div class="tb-wl-palette" formGroupName="primaryPalette">
+            <h4 class="mat-subtitle-1">{{ 'admin.white-labeling.primary-palette' | translate }}</h4>
+            <div class="tb-wl-color-row">
+              <button type="button" mat-icon-button class="tb-wl-color-picker"
+                      (click)="generalPrimaryMain.click()"
+                      [style.--picker-color]="generalForm.get('primaryPalette.main')?.value || '#1976d2'">
+                <mat-icon>palette</mat-icon>
+                <input type="color" #generalPrimaryMain
+                       formControlName="main"
+                       (change)="generalForm.get('primaryPalette')?.markAsDirty()" />
+              </button>
+              <mat-form-field appearance="outline" class="tb-wl-color-input">
+                <mat-label>{{ 'admin.white-labeling.color-main' | translate }}</mat-label>
+                <input matInput formControlName="main" placeholder="#1976d2" />
+              </mat-form-field>
+            </div>
+            <div class="tb-wl-color-row">
+              <button type="button" mat-icon-button class="tb-wl-color-picker"
+                      (click)="generalFontColor.click()"
+                      [style.--picker-color]="generalForm.get('primaryPalette.contrast')?.value || '#ffffff'">
+                <mat-icon>palette</mat-icon>
+                <input type="color" #generalFontColor
+                       formControlName="contrast"
+                       (change)="generalForm.get('primaryPalette')?.markAsDirty()" />
+              </button>
+              <mat-form-field appearance="outline" class="tb-wl-color-input">
+                <mat-label>{{ 'admin.white-labeling.font-color' | translate }}</mat-label>
+                <input matInput formControlName="contrast" placeholder="#ffffff" />
+              </mat-form-field>
+            </div>
+          </div>
+
+          <mat-form-field appearance="outline" class="mat-block">
+            <mat-label>{{ 'admin.white-labeling.advanced-css' | translate }}</mat-label>
+            <textarea matInput formControlName="advancedCss" rows="6"></textarea>
+            <mat-hint>{{ 'admin.white-labeling.advanced-css-hint' | translate }}</mat-hint>
+          </mat-form-field>
+
+          <div class="tb-wl-js-section">
+            <div class="tb-wl-js-header">
+              <span class="mat-subtitle-1">{{ 'admin.white-labeling.js-libraries' | translate }}</span>
+              <button type="button" mat-icon-button (click)="addJsLibrary()"
+                      [matTooltip]="'admin.white-labeling.js-library-add' | translate">
+                <mat-icon>add</mat-icon>
+              </button>
+            </div>
+            <div formArrayName="jsLibraries">
+              @for (lib of jsLibraries.controls; track $index) {
+                <div [formGroupName]="$index" class="tb-wl-lib-row">
+                  <mat-form-field appearance="outline" class="tb-wl-lib-name">
+                    <mat-label>{{ 'admin.white-labeling.js-library-name' | translate }}</mat-label>
+                    <input matInput formControlName="name" />
+                  </mat-form-field>
+                  <mat-form-field appearance="outline" class="tb-wl-lib-url">
+                    <mat-label>{{ 'admin.white-labeling.js-library-url' | translate }}</mat-label>
+                    <input matInput formControlName="url"
+                           placeholder="https://cdn.example.com/library.js" />
+                  </mat-form-field>
+                  <button type="button" mat-stroked-button class="tb-wl-upload-button"
+                          (click)="libFileInput.click()"
+                          [matTooltip]="'admin.white-labeling.js-library-upload' | translate">
+                    <mat-icon>upload_file</mat-icon>
+                    {{ 'admin.white-labeling.upload-file' | translate }}
+                  </button>
+                  <input #libFileInput type="file" accept="application/javascript,text/javascript,.js"
+                         hidden (change)="onJsLibraryFileSelected($event, $index)" />
+                  @if (lib.get('dataUri')?.value) {
+                    <mat-icon class="tb-wl-lib-uploaded" color="primary"
+                              [matTooltip]="lib.get('name')?.value || ('admin.white-labeling.js-library-uploaded' | translate)">
+                      check_circle
+                    </mat-icon>
+                  }
+                  <button type="button" mat-icon-button color="warn"
+                          (click)="removeJsLibrary($index)"
+                          [matTooltip]="'admin.white-labeling.js-library-remove' | translate">
+                    <mat-icon>delete_outline</mat-icon>
+                  </button>
+                </div>
+              }
+            </div>
+
+            <div class="tb-wl-js-header" style="margin-top: 16px;">
+              <span class="mat-subtitle-1">{{ 'admin.white-labeling.advanced-javascript' | translate }}</span>
+              <button type="button" mat-stroked-button (click)="testJs()">
+                <mat-icon>play_arrow</mat-icon>
+                {{ 'admin.white-labeling.js-test' | translate }}
+              </button>
+            </div>
+            <tb-js-func formControlName="advancedJs"
+                        [functionName]="''"
+                        [disableUndefinedCheck]="true"
+                        minHeight="160px">
+            </tb-js-func>
+          </div>
+
+        </fieldset>
+        <div class="flex flex-row flex-wrap items-center justify-end gap-2">
+          <button mat-button color="warn" type="button" (click)="resetGeneral()">
+            {{ 'admin.white-labeling.reset' | translate }}
+          </button>
+          <button mat-button color="primary" type="button"
+                  [disabled]="generalForm.pristine"
+                  (click)="discardGeneral()">{{ 'action.undo' | translate }}</button>
+          <button mat-button mat-raised-button color="primary"
+                  [disabled]="!generalLoaded || generalForm.invalid || !generalForm.dirty"
+                  type="submit">{{ 'action.save' | translate }}</button>
+        </div>
+      </form>
+    </mat-card-content>
+  </mat-card>
+
+  <mat-card appearance="outlined" class="settings-card">
+    <mat-card-header>
+      <mat-card-title>
+        <div class="mat-headline-5">{{ 'admin.white-labeling.login-title' | translate }}</div>
+      </mat-card-title>
+      <mat-card-subtitle>
+        <div>{{ 'admin.white-labeling.login-subtitle' | translate }}</div>
+      </mat-card-subtitle>
+    </mat-card-header>
+    @if (!loginLoaded) {
+      <mat-progress-bar color="warn" mode="indeterminate"></mat-progress-bar>
+    } @else {
+      <div style="height: 4px;"></div>
+    }
+    <mat-card-content>
+      <form [formGroup]="loginForm" (ngSubmit)="saveLogin()" class="tb-form-panel no-border no-padding">
+        <fieldset [disabled]="!loginLoaded">
+          <mat-form-field appearance="outline" class="mat-block">
+            <mat-label>{{ 'admin.white-labeling.login-domain' | translate }}</mat-label>
+            <input matInput formControlName="domain" placeholder="iot.example.com" />
+            <mat-hint>{{ 'admin.white-labeling.login-domain-hint' | translate }}</mat-hint>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="mat-block">
+            <mat-label>{{ 'admin.white-labeling.application-title' | translate }}</mat-label>
+            <input matInput formControlName="applicationTitle" maxlength="255" />
+          </mat-form-field>
+
+          <div class="tb-wl-asset-row">
+            <mat-form-field appearance="outline" class="mat-block tb-wl-grow">
+              <mat-label>{{ 'admin.white-labeling.logo-url' | translate }}</mat-label>
+              <input matInput formControlName="logoUrl" />
+            </mat-form-field>
+            <button type="button" mat-stroked-button class="tb-wl-upload-button"
+                    (click)="loginLogoFile.click()">{{ 'admin.white-labeling.upload-logo' | translate }}</button>
+            <input #loginLogoFile type="file" accept="image/png,image/jpeg,image/svg+xml,image/webp"
+                   hidden (change)="onLogoSelected($event, 'logoDataUri', 'login')" />
+            @if (resolveLogoPreview(loginForm.value)) {
+              <img class="tb-wl-preview" [src]="resolveLogoPreview(loginForm.value)" alt="logo preview" />
+              <button type="button" mat-icon-button color="warn"
+                      (click)="clearAsset('logoDataUri', 'login'); clearAsset('logoUrl', 'login')"
+                      [matTooltip]="'admin.white-labeling.clear-logo' | translate">
+                <mat-icon>delete_outline</mat-icon>
+              </button>
+            }
+          </div>
+
+          <div class="tb-wl-asset-row">
+            <mat-form-field appearance="outline" class="mat-block tb-wl-grow">
+              <mat-label>{{ 'admin.white-labeling.favicon-url' | translate }}</mat-label>
+              <input matInput formControlName="faviconUrl" />
+            </mat-form-field>
+            <button type="button" mat-stroked-button class="tb-wl-upload-button"
+                    (click)="loginFaviconFile.click()">{{ 'admin.white-labeling.upload-favicon' | translate }}</button>
+            <input #loginFaviconFile type="file"
+                   accept="image/png,image/x-icon,image/vnd.microsoft.icon,image/svg+xml"
+                   hidden (change)="onLogoSelected($event, 'faviconDataUri', 'login')" />
+            @if (resolveFaviconPreview(loginForm.value)) {
+              <img class="tb-wl-preview tb-wl-favicon" [src]="resolveFaviconPreview(loginForm.value)" alt="favicon preview" />
+              <button type="button" mat-icon-button color="warn"
+                      (click)="clearAsset('faviconDataUri', 'login'); clearAsset('faviconUrl', 'login')"
+                      [matTooltip]="'admin.white-labeling.clear-favicon' | translate">
+                <mat-icon>delete_outline</mat-icon>
+              </button>
+            }
+          </div>
+
+          <mat-form-field appearance="outline" class="mat-block tb-wl-narrow">
+            <mat-label>{{ 'admin.white-labeling.background-color' | translate }}</mat-label>
+            <input matInput formControlName="backgroundColor" placeholder="#ffffff" />
+          </mat-form-field>
+
+          <div class="tb-wl-palette" formGroupName="primaryPalette">
+            <h4 class="mat-subtitle-1">{{ 'admin.white-labeling.primary-palette' | translate }}</h4>
+            <div class="tb-wl-color-row">
+              <button type="button" mat-icon-button class="tb-wl-color-picker"
+                      (click)="loginPrimaryMain.click()"
+                      [style.--picker-color]="loginForm.get('primaryPalette.main')?.value || '#1976d2'">
+                <mat-icon>palette</mat-icon>
+                <input type="color" #loginPrimaryMain
+                       formControlName="main"
+                       (change)="loginForm.get('primaryPalette')?.markAsDirty()" />
+              </button>
+              <mat-form-field appearance="outline" class="tb-wl-color-input">
+                <mat-label>{{ 'admin.white-labeling.color-main' | translate }}</mat-label>
+                <input matInput formControlName="main" placeholder="#1976d2" />
+              </mat-form-field>
+            </div>
+            <div class="tb-wl-color-row">
+              <button type="button" mat-icon-button class="tb-wl-color-picker"
+                      (click)="loginFontColor.click()"
+                      [style.--picker-color]="loginForm.get('primaryPalette.contrast')?.value || '#ffffff'">
+                <mat-icon>palette</mat-icon>
+                <input type="color" #loginFontColor
+                       formControlName="contrast"
+                       (change)="loginForm.get('primaryPalette')?.markAsDirty()" />
+              </button>
+              <mat-form-field appearance="outline" class="tb-wl-color-input">
+                <mat-label>{{ 'admin.white-labeling.font-color' | translate }}</mat-label>
+                <input matInput formControlName="contrast" placeholder="#ffffff" />
+              </mat-form-field>
+            </div>
+          </div>
+        </fieldset>
+        <div class="flex flex-row flex-wrap items-center justify-end gap-2">
+          <button mat-button color="warn" type="button" (click)="resetLogin()">
+            {{ 'admin.white-labeling.reset' | translate }}
+          </button>
+          <button mat-button color="primary" type="button"
+                  [disabled]="loginForm.pristine"
+                  (click)="discardLogin()">{{ 'action.undo' | translate }}</button>
+          <button mat-button mat-raised-button color="primary"
+                  [disabled]="!loginLoaded || loginForm.invalid || !loginForm.dirty"
+                  type="submit">{{ 'action.save' | translate }}</button>
+        </div>
+      </form>
+    </mat-card-content>
+  </mat-card>
+</div>

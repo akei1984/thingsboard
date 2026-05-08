@@ -23,3 +23,19 @@
 ALTER TABLE calculated_field ADD COLUMN IF NOT EXISTS additional_info varchar;
 
 -- CALCULATED FIELD ADDITIONAL INFO ADDITION END
+
+-- WHITE LABELING SETTINGS START
+
+CREATE TABLE IF NOT EXISTS white_labeling_settings (
+    id uuid NOT NULL CONSTRAINT white_labeling_settings_pkey PRIMARY KEY,
+    created_time bigint NOT NULL,
+    scope varchar(20) NOT NULL,
+    tenant_id uuid NOT NULL,
+    type varchar(20) NOT NULL,
+    domain varchar(253),
+    settings_json varchar,
+    CONSTRAINT white_labeling_settings_unq UNIQUE (scope, tenant_id, type)
+);
+CREATE INDEX IF NOT EXISTS idx_white_labeling_settings_domain ON white_labeling_settings(domain);
+
+-- WHITE LABELING SETTINGS END

@@ -21,7 +21,10 @@ CONF_FOLDER=${BASE}/conf
 jarfile="${BASE}/thingsboard-${project.version}-boot.jar"
 installDir=${BASE}/data
 loadDemo=true
+LOG_DIR=${LOG_DIR:-${BASE}/logs}
 
+# Create log directory if it doesn't exist
+mkdir -p "${LOG_DIR}"
 
 export JAVA_OPTS="$JAVA_OPTS -Dplatform=@pkg.platform@"
 export LOADER_PATH=${BASE}/conf,${BASE}/extensions
@@ -33,6 +36,7 @@ run_user="$USER"
 sudo -u "$run_user" -s /bin/sh -c "java -cp ${jarfile} $JAVA_OPTS -Dloader.main=org.thingsboard.server.ThingsboardInstallApplication \
                     -Dinstall.data_dir=${installDir} \
                     -Dinstall.load_demo=${loadDemo} \
+                    -Dinstall.logFolder=${LOG_DIR} \
                     -Dspring.jpa.hibernate.ddl-auto=none \
                     -Dinstall.upgrade=false \
                     -Dlogging.config=logback.xml \
