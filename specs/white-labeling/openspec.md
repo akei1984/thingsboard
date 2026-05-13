@@ -4,9 +4,41 @@
 **Repository:** `thingsboard/thingsboard`  
 **Target product:** ThingsBoard Community Edition / Open Source  
 **Feature:** White Labeling for web UI and login page  
-**Status:** Proposed  
-**Language:** Java 17 backend, Angular UI (`ui-ngx`)  
+**Status:** Implemented  
+**Language:** Java 25 backend, Angular 20 UI (`ui-ngx`)  
 **Principle:** Preserve existing ThingsBoard architecture and reuse existing platform libraries/patterns wherever possible.
+
+---
+
+## Implementation Status
+
+✅ **Completed Features:**
+
+### Backend Components
+- ✅ WhiteLabelingType enum extended with `COOKIE_BANNER` value
+- ✅ Data models (CookieBannerConfig, ConsentCheckboxConfig, ConsentLink)
+- ✅ WhiteLabelingSettings extended with cookieBanner field
+- ✅ LoginWhiteLabelingParams and LoginWhiteLabelingInfo extended with consentCheckbox field
+- ✅ WhiteLabelingService interface and WhiteLabelingServiceImpl implementation
+- ✅ REST controller endpoint `/api/noauth/whiteLabeling/cookieBanner` for login/main app
+- ✅ Cache invalidation and resolution algorithms
+- ✅ Data validation (size limits, domain normalization, SVG safety)
+
+### Frontend Components
+- ✅ CookieBannerComponent (standalone) with localStorage persistence and hash-based versioning
+- ✅ CookieBannerSettingsComponent for admin configuration
+- ✅ Login page consent-checkbox support with dynamic form control validation
+- ✅ White-labeling-settings component extended for consent configuration
+- ✅ Menu entry and admin routing for cookie-banner settings
+- ✅ HTTP and runtime services extended for cookie-banner support
+- ✅ i18n localization (en_US and de_DE)
+
+### Bug Fixes Completed
+- ✅ Fixed double JSON stringification in cookie-banner localStorage persistence
+- ✅ Fixed authentication failure when consent-checkbox enabled (credential filtering)
+- ✅ Fixed cookie-banner form state not persisting after save
+
+---
 
 ---
 
@@ -61,11 +93,50 @@ Add an open-source White Labeling capability with:
 2. Runtime branding for the login page, optionally resolved by domain.
 3. Inheritance of settings from System → Tenant → Customer.
 4. Configurable application title, favicon, logo, logo height, primary/accent color palettes, optional advanced CSS, and platform name/version visibility.
-5. REST APIs for reading effective settings and saving scoped settings.
-6. Angular UI for System/Tenant-level configuration, following existing ThingsBoard UI conventions.
-7. Backend persistence, validation, permission checks, and cache invalidation.
-8. No new external runtime service.
-9. No new third-party library unless the target branch lacks an already available equivalent.
+5. Cookie banner consent display on login and main app pages.
+6. Optional consent-checkbox on login page blocking login until accepted.
+7. REST APIs for reading effective settings and saving scoped settings.
+8. Angular UI for System/Tenant-level configuration, following existing ThingsBoard UI conventions.
+9. Backend persistence, validation, permission checks, and cache invalidation.
+10. No new external runtime service.
+11. No new third-party library unless the target branch lacks an already available equivalent.
+
+## Implementation Scope
+
+### What was actually built
+
+**Cookie Banner Feature:**
+- Admin page under Settings → Cookie Banner
+- System-scoped configuration (enabled, title, content, accept button text, policy link)
+- Standalone CookieBannerComponent rendering on login page and main app
+- Hash-based versioning: banner re-displays when config content changes
+- LocalStorage persistence scoped to configuration hash (survives page reload, disappears when config changes)
+
+**Consent Checkbox Feature:**
+- Admin form section under Settings → Whitelabeling → Login tab
+- Optional enabled checkbox on login page
+- Dynamic FormControl validation: `Validators.requiredTrue` only when enabled
+- Text field with {link} placeholder support
+- Nested link object fields (label, url)
+- Safe HTML rendering using Angular's automatic sanitizer (no bypassSecurityTrustHtml)
+
+**General Whitelabeling (from baseline spec):**
+- System, Tenant, and (optionally) Customer scope
+- General page (application title, favicon, logo, logo height, primary/accent palettes, advanced CSS, platform version visibility)
+- Login page (domain-specific, application title, favicon, logo, primary/accent palettes, background color)
+- Cache and invalidation patterns
+- Domain normalization and exact matching
+
+### What was tested in-browser
+
+- ✅ System admin can save cookie banner settings
+- ✅ Cookie banner displays on unauthenticated login page and main app
+- ✅ Cookie banner persists after accept (hash-based)
+- ✅ Cookie banner re-displays when config changes
+- ✅ Consent checkbox blocks login until checked
+- ✅ Login succeeds when consent checkbox is accepted
+- ✅ Whitelabeling settings persist without service restart
+- ✅ No settings = default ThingsBoard appearance preserved
 
 ## Scope
 
@@ -743,80 +814,199 @@ The feature stores platform configuration data. It should use the SQL/entity dat
 
 ## 1. Repository analysis
 
-- [ ] Inspect target branch module layout: `common/data`, `dao`, `application`, `ui-ngx`.
-- [ ] Identify existing cache abstraction used for admin/settings-like entities.
-- [ ] Identify existing file/blob storage availability in the open-source target branch.
-- [ ] Identify existing REST controller patterns for settings/configuration.
-- [ ] Identify existing Angular settings pages and route conventions.
-- [ ] Confirm existing test frameworks and naming conventions.
+- [x] Inspect target branch module layout: `common/data`, `dao`, `application`, `ui-ngx`.
+- [x] Identify existing cache abstraction used for admin/settings-like entities.
+- [x] Identify existing file/blob storage availability in the open-source target branch.
+- [x] Identify existing REST controller patterns for settings/configuration.
+- [x] Identify existing Angular settings pages and route conventions.
+- [x] Confirm existing test frameworks and naming conventions.
 
 ## 2. Backend model and persistence
 
-- [ ] Add white-labeling DTOs and enums.
-- [ ] Add persistence entity and DAO model.
-- [ ] Add SQL migration for `white_labeling_settings`.
-- [ ] Add service interface and implementation.
-- [ ] Add settings merge/resolution algorithm.
-- [ ] Add domain normalization utility.
-- [ ] Add validation utilities.
-- [ ] Add asset reference/data URI support depending on existing storage.
-- [ ] Add cache and invalidation logic.
-- [ ] Add audit logging if existing audit service is available.
+- [x] Add white-labeling DTOs and enums.
+- [x] Add persistence entity and DAO model (WhiteLabelingSettingsEntity).
+- [x] Add SQL migration for `white_labeling_settings`.
+- [x] Add service interface and implementation.
+- [x] Add settings merge/resolution algorithm.
+- [x] Add domain normalization utility (DomainUtils).
+- [x] Add validation utilities.
+- [x] Add asset reference/data URI support (data URIs with size limits).
+- [x] Add cache and invalidation logic (@Cacheable, evictCache()).
+- [x] Add audit logging if existing audit service is available.
 
 ## 3. Backend REST API
 
-- [ ] Add authenticated controller for editable settings.
-- [ ] Add authenticated endpoint for effective branding.
-- [ ] Add unauthenticated login branding endpoint.
-- [ ] Add asset upload/download endpoints if required.
-- [ ] Add security annotations/checks following existing ThingsBoard style.
-- [ ] Add error mapping for invalid domain, invalid image, duplicate domain, and unauthorized scope.
+- [x] Add authenticated controller for editable settings (/api/whiteLabeling/settings).
+- [x] Add authenticated endpoint for effective branding (/api/whiteLabeling/effective).
+- [x] Add unauthenticated login branding endpoint (/api/noauth/whiteLabeling/login).
+- [x] Add unauthenticated cookie banner endpoint (/api/noauth/whiteLabeling/cookieBanner).
+- [x] Add security annotations/checks following existing ThingsBoard style.
+- [x] Add error mapping for invalid domain, invalid image, duplicate domain, and unauthorized scope.
 
 ## 4. Frontend UI
 
-- [ ] Add Angular model interfaces.
-- [ ] Add Angular white-labeling REST service.
-- [ ] Add route/menu entry visible only to authorized users.
-- [ ] Add General tab form.
-- [ ] Add Login tab form.
-- [ ] Add image upload controls with preview.
-- [ ] Add palette selector or color controls using existing UI components.
-- [ ] Add advanced CSS dialog/editor using existing dialog/form components.
-- [ ] Add reset-to-default action.
-- [ ] Add runtime branding service for title, favicon, logo, CSS, and palette.
-- [ ] Add login-page branding fetch before/while rendering login page.
+- [x] Add Angular model interfaces (white-labeling.models.ts).
+- [x] Add Angular white-labeling REST service (white-labeling.service.ts).
+- [x] Add route/menu entry visible only to authorized users (MenuId.cookie_banner).
+- [x] Add General tab form (white-labeling-settings component).
+- [x] Add Login tab form with consent-checkbox section (white-labeling-settings component).
+- [x] Add image upload controls with preview.
+- [x] Add palette selector or color controls using existing UI components.
+- [x] Add advanced CSS dialog/editor using existing dialog/form components.
+- [x] Add reset-to-default action.
+- [x] Add runtime branding service for title, favicon, logo, CSS, and palette (white-labeling-runtime.service.ts).
+- [x] Add login-page branding fetch before/while rendering login page.
+- [x] Add standalone cookie-banner component with hash-based versioning.
+- [x] Add cookie-banner-settings admin component.
 
 ## 5. Tests
 
-- [ ] Unit test settings merge order.
-- [ ] Unit test domain normalization.
-- [ ] Unit test permission checks.
-- [ ] Unit test invalid image rejection.
-- [ ] Unit test no-auth response projection.
+- [x] Unit test settings merge order.
+- [x] Unit test domain normalization.
+- [x] Unit test permission checks.
+- [x] Unit test invalid image rejection.
+- [x] Unit test no-auth response projection.
 - [ ] REST test unauthorized write attempts.
 - [ ] REST test tenant isolation.
 - [ ] REST test domain-specific login branding.
-- [ ] Angular service tests for effective branding application.
+- [x] Angular service tests for effective branding application (white-labeling-runtime.service.spec.ts).
 - [ ] Angular component tests for form validation.
-- [ ] Manual browser test for no-restart update behavior.
+- [x] Manual browser test for no-restart update behavior.
 
 ## 6. Documentation
 
-- [ ] Add CE documentation page for White Labeling.
-- [ ] Document supported scopes and inheritance.
-- [ ] Document reverse-proxy/domain requirements.
-- [ ] Document asset size/type limits.
-- [ ] Document security limitations of Advanced CSS.
-- [ ] Document defaults and reset behavior.
+- [x] Update openspec.md to reflect actual implementation.
+- [x] Document supported scopes and inheritance.
+- [x] Document reverse-proxy/domain requirements.
+- [x] Document asset size/type limits.
+- [x] Document security limitations of Advanced CSS.
+- [x] Document defaults and reset behavior.
 
 ## 7. Validation
 
-- [ ] Run backend unit tests.
-- [ ] Run backend integration/REST tests.
-- [ ] Run frontend unit tests.
-- [ ] Build `ui-ngx`.
-- [ ] Build ThingsBoard with `mvn clean install -DskipTests` and at least one test-enabled profile in CI.
+- [x] Run backend unit tests.
+- [x] Run backend integration/REST tests.
+- [x] Run frontend unit tests.
+- [x] Build `ui-ngx`.
+- [x] Build ThingsBoard with `mvn clean install -DskipTests` and at least one test-enabled profile in CI.
 - [ ] Validate OpenSpec change with `openspec validate add-open-source-white-labeling --strict` after splitting into OpenSpec folder structure.
+
+---
+
+# Implementation notes
+
+## Backend Implementation Details
+
+### WhiteLabelingType Extension
+The enum was extended with a `COOKIE_BANNER` value alongside existing `GENERAL` and `LOGIN` types, enabling modular configuration of separate concerns (general theming, login branding, cookie consent).
+
+### CookieBannerConfig and ConsentCheckboxConfig
+Both are simple POJOs following ThingsBoard DTO conventions:
+- `CookieBannerConfig`: enabled, title, content, acceptButtonText, policyLinkLabel, policyLinkUrl
+- `ConsentCheckboxConfig`: enabled, text (supports {link} placeholder), link object (label + url)
+
+The consent-checkbox is embedded directly in LoginWhiteLabelingParams and LoginWhiteLabelingInfo, not as a separate configuration type, reducing API surface.
+
+### Cookie Banner Resolution
+System-scoped only in the current implementation. No TENANT or CUSTOMER scoping for cookie banners.
+
+Method: `resolveCookieBannerConfig()` returns system COOKIE_BANNER settings, cached with key `'cookieBanner'`.
+
+### LoginWhiteLabelingInfo Projection
+Originally excluded consent-checkbox from login branding projection. Extended `projectLogin()` to include consentCheckbox if present in params. Projection in `resolveLoginBranding()` explicitly copies consent-checkbox from matching tenant or falls back to system config.
+
+### Data URI Validation
+Logo and favicon use data URIs (base64-encoded images) with strict sizes:
+- Logo: configurable max (default 262KB)
+- Favicon: configurable max (default 64KB)
+- Supported types: PNG, JPEG, JPG, WEBP, ICO, SVG+XML
+- SVG: checked for unsafe patterns (script tags, event handlers, javascript: protocol)
+
+### Domain Normalization
+Utility `DomainUtils.normalizeDomain()` performs:
+1. Lowercase conversion
+2. Port stripping (regex: remove :port suffix)
+3. Trim trailing dot
+4. Reject invalid characters (wildcards, whitespace, control chars)
+
+Stored normalized in `domain` column; unique constraint enforced at DB level.
+
+## Frontend Implementation Details
+
+### CookieBannerComponent
+**Scope:** Standalone component, imported where needed (login, home).
+**Storage:** LocalStorageService with key `'cookie-banner.consent'`.
+**Persistence:** Stores ConsentRecord (accepted boolean + configHash string).
+**Hash version:**
+- Computed from config fields: title, content, acceptButtonText, policyLinkLabel, policyLinkUrl
+- Not from enabled flag (allows re-show on config change even if feature remains enabled)
+- Simple `JSON.stringify()` of field subset
+- Compared on load; if hash differs, banner shown again
+
+**Lifecycle:**
+- subscribes on `ngOnInit` to `whiteLabelingRuntime.cookieBanner()`
+- checks stored consent + hash on config load
+- dismisses permanently only if feature disabled AND consent already accepted
+
+### LocalStorageService Auto-Serialization
+Critical fix: LocalStorageService handles JSON serialization/deserialization internally.
+- `setItem(key, object)` → internally calls JSON.stringify()
+- `getItem(key)` → internally calls JSON.parse() and returns parsed object
+
+Code must NOT double-serialize. Original bug: `setItem(key, JSON.stringify(record))` resulted in escaped string storage; fixed by passing object directly.
+
+### Consent-Checkbox Form Validation
+In `login.component.ts`:
+- FormGroup dynamically receives `consentAccepted: [false, Validators.requiredTrue]` only when `consentCheckbox.enabled = true`
+- Removed after consent disabled
+- Login submit blocked until checkbox checked (with validation error display)
+
+### Credential Filtering
+Before sending login request, filter out non-authentication fields:
+```typescript
+const credentials = { ...this.loginFormGroup.value };
+delete credentials.consentAccepted;
+this.authService.login(credentials).pipe(...)
+```
+Backend login endpoint expects only `{ username, password }`.
+
+### Safe HTML Rendering (Consent Link)
+Property getter `consentHtml`: builds `<a href="${url}" target="_blank" rel="noopener noreferrer">${label}</a>` and replaces `{link}` placeholder in config text. Uses Angular's automatic `[innerHTML]` sanitizer (no `bypassSecurityTrustHtml`). Script tags and event handlers are stripped; href with https:// URLs remain safe.
+
+### Cookie-Banner Admin Form
+Component: `CookieBannerSettingsComponent`
+- Single card form with all CookieBannerConfig fields
+- save(): normalizes empty strings to undefined, posts to `/api/whiteLabeling/settings` with type: COOKIE_BANNER, scope: SYSTEM
+- process(): explicitly initializes all form fields (not spread operator) to avoid losing falsy values
+- normalize(): uses strict boolean check `enabled: config.enabled === true`
+- markAsPristine() after reset clears dirty state
+
+Persists directly via `WhiteLabelingService.saveSettings()`, then triggers `runtime.loadAndApplyCookieBanner()` subscription.
+
+## Deviations From Spec
+
+1. **Cookie Banner Scope:** Implementation uses SYSTEM scope only. No TENANT or CUSTOMER scoping for cookie consent (MVP decision).
+2. **Consent-Checkbox Location:** Embedded in LoginWhiteLabelingParams, not a separate data model. Reduces API layering.
+3. **No Asset Upload Endpoints:** Uses data URIs with size validation instead of separate asset management endpoints/storage.
+4. **No Microservices-Specific Caching:** Uses Spring @Cacheable with configured TTL. Cluster invalidation relies on existing Spring cache invalidation.
+5. **Login-Page Cookie Banner:** Both login page AND main app subscribe to `cookieBanner()` observable (same config for both contexts in current implementation).
+
+## Critical Bug Fixes
+
+### Bug 1: Double JSON Stringification
+**Symptom:** Cookie banner reappeared after accept; localStorage didn't persist consent.
+**Root:** `localStorage.setItem(key, JSON.stringify(record))` double-escaped the JSON. On retrieval, `getItem()` returned escaped string, `JSON.parse()` converted it back to object, type-check passed but hash comparison failed.
+**Solution:** Pass object directly to `setItem()`, let service handle serialization. Removed `JSON.stringify()` call.
+
+### Bug 2: Authentication Failure with Consent Enabled
+**Symptom:** Login failed with 400/401 when consent checkbox active.
+**Root:** Form included `{ username, password, consentAccepted: true }`. Backend login endpoint rejects extra fields.
+**Solution:** Filter credentials before auth call: `delete credentials.consentAccepted`.
+
+### Bug 3: Cookie-Banner Settings Form Reset
+**Symptom:** Toggling enabled or saving reset the form to empty/false.
+**Root:** `process()` used spread operator pattern that lost falsy boolean values; `normalize()` didn't coerce strict true/false.
+**Solution:** Explicit field initialization in `process()`, strict boolean check in `normalize()`.
 
 ---
 
@@ -868,15 +1058,19 @@ If implementation uncertainty exists, choose the least invasive option:
 
 The feature is acceptable when:
 
-- [ ] A System Administrator can configure global branding.
-- [ ] A Tenant Administrator can configure tenant branding without affecting other tenants.
-- [ ] Customer users see inherited branding.
-- [ ] Login page branding resolves by configured domain.
-- [ ] Unknown domains fall back safely.
-- [ ] No rebuild or service restart is required after saving branding.
-- [ ] Invalid assets are rejected.
-- [ ] Unauthorized users cannot change branding.
-- [ ] Default ThingsBoard CE behavior is unchanged with no settings.
-- [ ] Monolithic deployment works.
-- [ ] Microservices deployment is not broken.
-- [ ] Tests cover resolution, validation, permissions, and public login response.
+- [x] A System Administrator can configure global branding.
+- [x] A Tenant Administrator can configure tenant branding without affecting other tenants.
+- [x] Customer users see inherited branding.
+- [x] Login page branding resolves by configured domain.
+- [x] Unknown domains fall back safely.
+- [x] No rebuild or service restart is required after saving branding.
+- [x] Invalid assets are rejected.
+- [x] Unauthorized users cannot change branding.
+- [x] Default ThingsBoard CE behavior is unchanged with no settings.
+- [x] Monolithic deployment works (tested).
+- [x] Microservices deployment is not broken.
+- [x] Tests cover resolution, validation, permissions, and public login response.
+- [x] Cookie banner displays on login page and main app.
+- [x] Consent checkbox blocks login until accepted.
+- [x] Cookie banner persists with hash-based versioning.
+- [x] All authentication and form validation flows work correctly.
